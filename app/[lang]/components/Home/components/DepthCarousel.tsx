@@ -1,51 +1,115 @@
-import { useCarousel2 } from "@/hooks/useCarousel2";
-import { ChevronLeft, ChevronRight} from "lucide-react";
-import Image from "next/image";
+'use client'
+import { useCarousel } from "@/hooks/useCarousel";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { Tag } from "@/types/types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-export default function CarouselDemo({cardData}: {cardData: {id: number, cropedBg: string, fullBg: string, label: string, description: string}[]}) {
+export default function CarouselDemo({data, setOpenItem, setOpenUnderTag}: {data: Tag[] | {id: number, label: string, image: string}[], setOpenItem: Function, setOpenUnderTag: Function}) {
 
+  const {dict} = useSettingsStore()
+
+  const dragStartX = useRef(0);
+  const dragCurrentX = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragStart = useCallback((clientX: number) => {
+    setIsDragging(true)
+    dragStartX.current = clientX;
+    dragCurrentX.current = clientX;
+  }, []);
+
+  const handleDragMove = useCallback((clientX: number) => {
+    dragCurrentX.current = clientX;
+  }, [isDragging]);
+
+  const handleDragEnd = useCallback((index: number) => {
+    const dragDistance = dragCurrentX.current - dragStartX.current;
+    
+    if (dragDistance === 0) {
+      goToIndex(index);
+      toggleAutoPlay();
+    }
+  
+    setIsDragging(false);
+    dragStartX.current = 0;
+    dragCurrentX.current = 0;
+  }, [isDragging]);
+
+  // const distanceBetweenItems = isMobile ? 170 : 250;
+
+  
+  const carouselConfig = useMemo(() => ({
+    itemCount: data.length,
+    distanceBetweenItems: 250,
+    initialIndex: Math.floor(data.length / 2),
+    visibleRange: 2,
+    autoPlay: false,
+    autoPlayInterval: 3000,
+    dragThreshold: 100,
+  }), [data.length]);
+  
   const {
-/*     activeIndex,
+    activeIndex,
     isAutoPlaying,
-    toggleAutoPlay, */
+    toggleAutoPlay,
+    goToIndex,
     getCarouselProps,
     getContainerProps,
     getItemProps,
     getNavigationProps,
     getDotProps,
-  } = useCarousel2({
-    itemCount: cardData.length,
-    initialIndex: 2,
-    visibleRange: 2,
-    autoPlay: true,
-    autoPlayInterval: 3000,
-    dragThreshold: 50,
-  });
+  } = useCarousel(carouselConfig);
+
+  useEffect(() => {
+    setOpenItem(activeIndex)
+    setOpenUnderTag(null)
+  }, [activeIndex])
+  
+const handleClick = useCallback((index: number) => ({
+    onMouseDown: (e: React.MouseEvent) => {
+      handleDragStart(e.clientX);
+    },
+    onMouseMove: (e: React.MouseEvent) => {
+      isDragging && handleDragMove(e.clientX);
+    },
+    onMouseUp: (e: React.MouseEvent) => {
+      handleDragEnd(index);
+    },
+    onTouchStart: (e: React.TouchEvent) => {
+      handleDragStart(e.touches[0].clientX);
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      handleDragMove(e.touches[0].clientX);
+    },
+    onTouchEnd: () => {
+      handleDragEnd(index);
+    },
+
+  }), [isDragging, handleDragStart, handleDragMove, handleDragEnd]);
 
   return (
-    <div className="min-w-screen flex items-center justify-center p-2">
-      <div className="w-full overflow-hidden">
+    <div className="w-screen flex items-center justify-center">
+      <div className="w-full">
         <div {...getCarouselProps()} className="relative h-[400px] md:h-[500px] outline-none">
           <div {...getContainerProps()}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              {cardData.map((item, index) => (
-                <div key={item.id} {...getItemProps(index)}>
-                  <div className="relative w-[400px] h-[300px] max-md:w-[250px] max-md:h-[250px] rounded-2xl ">
+            {data.map((item, index) => (
+              <div {...handleClick(index)} key={item.id} {...getItemProps(index)}>
+                <div className="space-y-5 md:space-y-10 flex flex-col items-center justify-center">
+                  <div className="relative w-[350px] h-[250px] max-md:w-[170px] max-md:h-[170px]">
                     <img
-                      src={`${item.cropedBg}`}
-                      alt={item.label}
-                      className="object-cover"
+                      src={item.image}
+                      alt={dict.services[item.label as keyof typeof dict.services]}
+                      className="object-cover h-full w-full"
                       draggable={false}
                     />
-                    <div className="absolute -bottom-10 max-md:bottom-0 left-0 text-center right-0 bg-linear-to-t from-white/70 to-transparent p-4">
-                      <h3 className="text-black text-2xl max-md:text-xl font-semibold">{item.label}</h3>
-                    </div>
                   </div>
+                  <h3 className="text-black text-center text-2xl max-md:text-[1rem] font-semibold absolute -bottom-5">{dict.services[item.label as keyof typeof dict.services]}</h3>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-
           {/* Navigation Buttons */}
           <button
             {...getNavigationProps('prev')}
@@ -61,15 +125,13 @@ export default function CarouselDemo({cardData}: {cardData: {id: number, cropedB
           </button>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-8">
-          {/* Dots */}
+{/*         <div className="flex items-center justify-center gap-8">
           <div className="flex gap-2">
             {cardData.map((_, index) => (
               <button key={index} {...getDotProps(index)} />
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

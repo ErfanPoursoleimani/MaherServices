@@ -17,6 +17,6 @@ export async function GET(req: NextRequest) {
     const dictionary = await getDictionary(lang as 'en' | 'fa')
     return NextResponse.json(dictionary)
   } catch (err) {
-    return NextResponse.json({ error: err }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to load dictionary' }, { status: 500 })
   }
 }

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Arabic, Vazirmatn } from "next/font/google";
 import "./globals.css";
-import TopNavbar from "./components/Nav/TopNavbar";
-import MobileNavbar from "./components/Nav/BottomNavbar";
 import ClientLayoutWrapper from "./ClientLayoutWrapper";
 import { SettingsInitializer } from "@/components/settings-initializer";
+import { MessagesProvider } from "@/contexts/MessagesContext";
+import { MessagesContainer } from "@/components/ui/MessagesContainer";
+import { DataInitializer } from "@/components/data-initializer";
+import { CookiesProvider } from "next-client-cookies/server";
 
 const vazirmatn = Vazirmatn({
   subsets: ['arabic', 'latin'],
@@ -33,17 +35,22 @@ export default async function RootLayout({
 
   const { lang } = await params
   return (
-    <html lang="en" className={`scrollbar-hide ${vazirmatn.variable}`}>
+    <html lang="en" className={`scrollbar-hide ${vazirmatn.variable} select-none`}>
       <body
         className={`${vazirmatn.className} antialiased`}
       >
-        <SettingsInitializer lang={lang}>
-          <ClientLayoutWrapper lang={lang}>
-            <TopNavbar />
-            {children}
-            <MobileNavbar/>
-          </ClientLayoutWrapper>
-        </SettingsInitializer>
+        <CookiesProvider>
+            <DataInitializer lang={lang}>
+              <SettingsInitializer lang={lang}>
+                <ClientLayoutWrapper lang={lang}>
+                  <MessagesProvider>
+                    {children}
+                    <MessagesContainer position="top-center" />
+                  </MessagesProvider>
+                </ClientLayoutWrapper>
+              </SettingsInitializer>
+            </DataInitializer>
+        </CookiesProvider>
       </body>
     </html>
   );

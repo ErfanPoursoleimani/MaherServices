@@ -1,42 +1,44 @@
-import { Dict } from '@/types/types';
+import { Dict } from "@/types/dict";
 import axios from 'axios';
 import { create } from 'zustand';
+import { initialDict } from './initialData';
 
 interface settingsStore {
     // State
-    dict: Dict;
-    isRTL: boolean;
-    loading: boolean;
-    error: string | null;
+    dict: Dict
+    isRTL: boolean
+    loading: boolean
+    error: string | null
+    openCategory: number | null
 
     // Configuration
-    lang: string;
+    lang: string
 
     // Actions
-    setLang: (lang: string) => void;
-    setDict: (dict: Dict) => void;
-    setError: (error: string) => void;
-    setLoading: (loading: boolean) => void;
+    setLang: (lang: string) => void
+    setDict: (dict: Dict) => void
+    setError: (error: string) => void
+    setLoading: (loading: boolean) => void
+    setOpenCategory: (openCategory: number) => void
 
     // API Actions
-    fetchDict: (lang: string) => Promise<void>;
+    fetchDict: (lang: string) => Promise<void>
     
     // Utility Actions
-    initializeStore: (lang: string) => Promise<void>;
-    clearError: () => void;
-    reset: () => void;
+    initializeStore: (lang: string) => Promise<void>
+    clearError: () => void
+    reset: () => void
 }
 
-const initialDict: Dict = {
-    // your initial dict structure
-};
+
 
 const initialState = {
     dict: initialDict,
     isRTL: false,
     lang: 'en',
     loading: false,
-    error: null
+    error: null,
+    openCategory: null
 };
 
 export const useSettingsStore = create<settingsStore>()((set, get) => ({
@@ -49,7 +51,7 @@ export const useSettingsStore = create<settingsStore>()((set, get) => ({
     setDict: (dict) => set({ dict }),
     setError: (error) => set({ error }),
     setLoading: (loading) => set({ loading }),
-
+    setOpenCategory: (openCategory) => set({ openCategory }),
     
     fetchDict: async (lang) => {
         try {
@@ -61,7 +63,7 @@ export const useSettingsStore = create<settingsStore>()((set, get) => ({
         }
     },
 
-    initializeStore: async (lang) => {
+    initializeStore: async (lang: string) => {
         set({ lang, isRTL: lang === 'fa'});
         
         const promises = [
@@ -76,8 +78,7 @@ export const useSettingsStore = create<settingsStore>()((set, get) => ({
         }
     },
 
-
-    clearError: () => set({ error: null }), // Changed from '' to null to match type
+    clearError: () => set({ error: null }),
     reset: () => {
         set(initialState);
     }
